@@ -1,5 +1,7 @@
--- FATALITY GUI for Matcha LuaVM
--- Converted from HTML/CSS/JS to Luau Drawing API
+-- FATALITY GUI - PROPERLY STYLED VERSION
+-- Matches the original HTML/CSS design
+
+print("[FATALITY] Initializing GUI...")
 
 -- Configuration
 local CONFIG = {
@@ -8,20 +10,21 @@ local CONFIG = {
     BAR_HEIGHT = 75,
     INSIDE_HEIGHT = 540,
     FIELDSET_WIDTH = 215,
-    TOGGLE_KEY = 0x2E, -- DELETE key (VK_DELETE)
+    FIELDSET_HEIGHT = 180,
+    TOGGLE_KEY = 0x2E, -- DELETE key
 }
 
--- Color Palette
+-- Color Palette (from original CSS)
 local COLORS = {
-    PRIMARY = Color3.fromRGB(70, 50, 240),    -- #4632f0
-    SECONDARY = Color3.fromRGB(235, 5, 90),   -- #eb055a
-    BG_DARK = Color3.fromRGB(45, 48, 57),     -- #2d3039
-    BG_DARKER = Color3.fromRGB(28, 20, 55),   -- #1c1437
-    BG_FIELD = Color3.fromRGB(31, 25, 66),    -- #1f1942
-    BORDER = Color3.fromRGB(70, 63, 106),     -- #463f6a
-    TEXT_GRAY = Color3.fromRGB(104, 100, 140), -- #68648c
+    PRIMARY = Color3.fromRGB(70, 50, 240),
+    SECONDARY = Color3.fromRGB(235, 5, 90),
+    BG_DARK = Color3.fromRGB(45, 48, 57),
+    BG_DARKER = Color3.fromRGB(28, 20, 55),
+    BG_FIELD = Color3.fromRGB(31, 25, 66),
+    BORDER = Color3.fromRGB(70, 63, 106),
+    TEXT_GRAY = Color3.fromRGB(104, 100, 140),
     TEXT_WHITE = Color3.fromRGB(255, 255, 255),
-    BLACK_ALPHA = Color3.fromRGB(0, 0, 0),
+    BLACK = Color3.fromRGB(0, 0, 0),
 }
 
 -- GUI State
@@ -29,7 +32,7 @@ local GUI = {
     visible = true,
     dragging = false,
     dragOffset = Vector2.new(0, 0),
-    position = Vector2.new(100, 100),
+    position = Vector2.new(200, 100),
     currentTab = 1,
     elements = {},
     checkboxes = {},
@@ -45,7 +48,7 @@ local TABS = {
     {name = "LEGIT", id = 5},
 }
 
--- Helper Functions
+-- Helper: Create drawing with auto-tracking
 local function createDrawing(drawingType, properties)
     local drawing = Drawing.new(drawingType)
     for prop, value in pairs(properties) do
@@ -55,6 +58,7 @@ local function createDrawing(drawingType, properties)
     return drawing
 end
 
+-- Helper: Check mouse over
 local function isMouseOver(pos, size)
     local mouse = game:GetService("Players").LocalPlayer:GetMouse()
     local mousePos = Vector2.new(mouse.X, mouse.Y)
@@ -62,163 +66,134 @@ local function isMouseOver(pos, size)
            mousePos.Y >= pos.Y and mousePos.Y <= pos.Y + size.Y
 end
 
-local function updateVisibility()
-    for _, element in ipairs(GUI.elements) do
-        if element.Visible ~= GUI.visible then
-            element.Visible = GUI.visible
-        end
-    end
-end
+-- Create fogging background
+local fogging = createDrawing("Square", {
+    Size = Vector2.new(10000, 10000),
+    Position = Vector2.new(0, 0),
+    Color = COLORS.BLACK,
+    Transparency = 0.35,
+    Filled = true,
+    Visible = true,
+    ZIndex = 0,
+})
 
--- Create Background Fogging
-local function createFogging()
-    local fog = createDrawing("Square", {
-        Size = Vector2.new(10000, 10000),
-        Position = Vector2.new(0, 0),
-        Color = COLORS.BLACK_ALPHA,
-        Transparency = 0.35,
-        Filled = true,
-        Visible = true,
-        ZIndex = 0,
-    })
-    return fog
-end
+-- Create main menu background
+local menuBg = createDrawing("Square", {
+    Size = Vector2.new(CONFIG.MENU_WIDTH, CONFIG.MENU_HEIGHT),
+    Position = GUI.position,
+    Color = COLORS.BG_DARK,
+    Transparency = 1,
+    Filled = true,
+    Visible = true,
+    ZIndex = 1,
+})
 
--- Create Main Menu Container
-local function createMenuBackground()
-    local bg = createDrawing("Square", {
-        Size = Vector2.new(CONFIG.MENU_WIDTH, CONFIG.MENU_HEIGHT),
-        Position = GUI.position,
-        Color = COLORS.BG_DARK,
-        Transparency = 1,
-        Filled = true,
-        Visible = true,
-        ZIndex = 1,
-    })
-    
-    local border = createDrawing("Square", {
-        Size = Vector2.new(CONFIG.MENU_WIDTH, CONFIG.MENU_HEIGHT),
-        Position = GUI.position,
-        Color = COLORS.BORDER,
-        Transparency = 1,
-        Filled = false,
-        Visible = true,
-        ZIndex = 2,
-    })
-    
-    return bg, border
-end
+local menuBorder = createDrawing("Square", {
+    Size = Vector2.new(CONFIG.MENU_WIDTH, CONFIG.MENU_HEIGHT),
+    Position = GUI.position,
+    Color = COLORS.BORDER,
+    Transparency = 1,
+    Filled = false,
+    Visible = true,
+    ZIndex = 2,
+})
 
--- Create Top Bar
-local function createTopBar()
-    local bar = createDrawing("Square", {
-        Size = Vector2.new(CONFIG.MENU_WIDTH, CONFIG.BAR_HEIGHT),
-        Position = GUI.position,
-        Color = Color3.fromRGB(27, 21, 57), -- #1b1539
-        Transparency = 1,
-        Filled = true,
-        Visible = true,
-        ZIndex = 3,
-    })
+-- Create top bar
+local topBar = createDrawing("Square", {
+    Size = Vector2.new(CONFIG.MENU_WIDTH, CONFIG.BAR_HEIGHT),
+    Position = GUI.position,
+    Color = Color3.fromRGB(27, 21, 57),
+    Transparency = 1,
+    Filled = true,
+    Visible = true,
+    ZIndex = 3,
+})
+
+-- Gradient line under title
+local gradientLine = createDrawing("Square", {
+    Size = Vector2.new(CONFIG.MENU_WIDTH, 2),
+    Position = Vector2.new(GUI.position.X, GUI.position.Y + 15),
+    Color = COLORS.SECONDARY,
+    Transparency = 1,
+    Filled = true,
+    Visible = true,
+    ZIndex = 4,
+})
+
+-- Logo text
+local logo = createDrawing("Text", {
+    Text = "FATALITY",
+    Size = 18,
+    Font = Drawing.Fonts.SystemBold,
+    Position = Vector2.new(GUI.position.X + 18, GUI.position.Y + 35),
+    Color = COLORS.TEXT_WHITE,
+    Transparency = 1,
+    Visible = true,
+    Center = false,
+    Outline = true,
+    ZIndex = 5,
+})
+
+-- Create tabs
+local tabElements = {}
+local tabStartX = 245  -- Centered position for tabs
+local tabSpacing = 95
+
+for i, tab in ipairs(TABS) do
+    local xPos = GUI.position.X + tabStartX + ((i - 1) * tabSpacing)
+    local yPos = GUI.position.Y + 30
     
-    -- Gradient line
-    local line = createDrawing("Square", {
-        Size = Vector2.new(CONFIG.MENU_WIDTH, 2),
-        Position = Vector2.new(GUI.position.X, GUI.position.Y + 15),
-        Color = COLORS.SECONDARY,
-        Transparency = 1,
-        Filled = true,
-        Visible = true,
-        ZIndex = 4,
-    })
-    
-    -- Logo text
-    local logo = createDrawing("Text", {
-        Text = "FATALITY",
-        Size = 18,
-        Font = Drawing.Fonts.SystemBold,
-        Position = Vector2.new(GUI.position.X + 18, GUI.position.Y + 40),
-        Color = COLORS.TEXT_WHITE,
+    local tabText = createDrawing("Text", {
+        Text = tab.name,
+        Size = 13,
+        Font = Drawing.Fonts.System,
+        Position = Vector2.new(xPos, yPos),
+        Color = i == GUI.currentTab and COLORS.TEXT_WHITE or COLORS.TEXT_GRAY,
         Transparency = 1,
         Visible = true,
         Center = false,
-        Outline = true,
-        ZIndex = 5,
+        Outline = false,
+        ZIndex = 6,
     })
     
-    return bar, line, logo
-end
-
--- Create Tab System
-local function createTabs()
-    local tabElements = {}
-    local startX = 160
-    local tabWidth = 100
-    
-    for i, tab in ipairs(TABS) do
-        local xPos = GUI.position.X + startX + ((i - 1) * tabWidth)
-        local yPos = GUI.position.Y + 30
-        
-        -- Tab text
-        local tabText = createDrawing("Text", {
-            Text = tab.name,
-            Size = 14,
-            Font = Drawing.Fonts.System,
-            Position = Vector2.new(xPos, yPos),
-            Color = GUI.currentTab == i and COLORS.TEXT_WHITE or COLORS.TEXT_GRAY,
-            Transparency = 1,
-            Visible = true,
-            Center = false,
-            Outline = false,
-            ZIndex = 6,
-        })
-        
-        -- Underline for active tab
-        local underline = createDrawing("Square", {
-            Size = Vector2.new(tabWidth - 20, 2),
-            Position = Vector2.new(xPos, yPos + 20),
-            Color = COLORS.SECONDARY,
-            Transparency = GUI.currentTab == i and 1 or 0,
-            Filled = true,
-            Visible = true,
-            ZIndex = 6,
-        })
-        
-        table.insert(tabElements, {
-            text = tabText,
-            underline = underline,
-            index = i,
-            bounds = {pos = Vector2.new(xPos, yPos), size = Vector2.new(tabWidth, 25)}
-        })
-    end
-    
-    return tabElements
-end
-
--- Create Inside Container
-local function createInsideContainer()
-    local inside = createDrawing("Square", {
-        Size = Vector2.new(CONFIG.MENU_WIDTH - 2, CONFIG.INSIDE_HEIGHT),
-        Position = Vector2.new(GUI.position.X + 1, GUI.position.Y + CONFIG.BAR_HEIGHT + 37),
-        Color = COLORS.BG_DARKER,
-        Transparency = 1,
+    local underline = createDrawing("Square", {
+        Size = Vector2.new(string.len(tab.name) * 8, 2),
+        Position = Vector2.new(xPos, yPos + 18),
+        Color = COLORS.SECONDARY,
+        Transparency = i == GUI.currentTab and 1 or 0,
         Filled = true,
         Visible = true,
-        ZIndex = 3,
+        ZIndex = 6,
     })
     
-    local border = createDrawing("Square", {
-        Size = Vector2.new(CONFIG.MENU_WIDTH - 2, CONFIG.INSIDE_HEIGHT),
-        Position = Vector2.new(GUI.position.X + 1, GUI.position.Y + CONFIG.BAR_HEIGHT + 37),
-        Color = COLORS.BORDER,
-        Transparency = 1,
-        Filled = false,
-        Visible = true,
-        ZIndex = 4,
+    table.insert(tabElements, {
+        text = tabText,
+        underline = underline,
+        index = i,
+        bounds = {pos = Vector2.new(xPos, yPos), size = Vector2.new(tabSpacing - 10, 25)}
     })
-    
-    return inside, border
 end
+
+-- Create inside container
+local insideContainer = createDrawing("Square", {
+    Size = Vector2.new(CONFIG.MENU_WIDTH - 4, CONFIG.INSIDE_HEIGHT),
+    Position = Vector2.new(GUI.position.X + 2, GUI.position.Y + CONFIG.BAR_HEIGHT + 35),
+    Color = COLORS.BG_DARKER,
+    Transparency = 1,
+    Filled = true,
+    Visible = true,
+    ZIndex = 3,
+})
+
+local insideBorder = createDrawing("Square", {
+    Size = Vector2.new(CONFIG.MENU_WIDTH - 4, CONFIG.INSIDE_HEIGHT),
+    Position = Vector2.new(GUI.position.X + 2, GUI.position.Y + CONFIG.BAR_HEIGHT + 35),
+    Color = COLORS.BORDER,
+    Transparency = 1,
+    Filled = false,
+    Visible = true,
+    ZIndex = 4,
+})
 
 -- Create Checkbox
 local function createCheckbox(label, position, tabId, index)
@@ -227,17 +202,17 @@ local function createCheckbox(label, position, tabId, index)
         label = label,
         tabId = tabId,
         index = index,
-        elements = {}
+        elements = {},
+        position = position,
     }
     
-    -- Checkbox box
     local box = createDrawing("Square", {
         Size = Vector2.new(9, 9),
         Position = position,
-        Color = COLORS.BG_DARKER,
+        Color = Color3.fromRGB(25, 21, 63),
         Transparency = 1,
         Filled = true,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         ZIndex = 10,
     })
     
@@ -247,26 +222,25 @@ local function createCheckbox(label, position, tabId, index)
         Color = COLORS.BORDER,
         Transparency = 1,
         Filled = false,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         ZIndex = 11,
     })
     
-    -- Checkbox label
     local labelText = createDrawing("Text", {
         Text = label,
-        Size = 12,
+        Size = 11,
         Font = Drawing.Fonts.System,
-        Position = Vector2.new(position.X + 15, position.Y - 2),
+        Position = Vector2.new(position.X + 20, position.Y - 2),
         Color = COLORS.TEXT_WHITE,
         Transparency = 1,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         Center = false,
         Outline = false,
         ZIndex = 10,
     })
     
     checkboxData.elements = {box = box, border = boxBorder, label = labelText}
-    checkboxData.bounds = {pos = position, size = Vector2.new(200, 15)}
+    checkboxData.bounds = {pos = position, size = Vector2.new(150, 15)}
     
     return checkboxData
 end
@@ -281,31 +255,30 @@ local function createSlider(label, position, tabId, index)
         label = label,
         tabId = tabId,
         index = index,
-        elements = {}
+        elements = {},
+        position = position,
     }
     
-    -- Slider label
     local labelText = createDrawing("Text", {
         Text = label,
-        Size = 12,
+        Size = 11,
         Font = Drawing.Fonts.System,
-        Position = Vector2.new(position.X, position.Y - 15),
+        Position = Vector2.new(position.X, position.Y - 20),
         Color = COLORS.TEXT_WHITE,
         Transparency = 1,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         Center = false,
         Outline = false,
         ZIndex = 10,
     })
     
-    -- Slider background
     local sliderBg = createDrawing("Square", {
         Size = Vector2.new(180, 10),
         Position = position,
-        Color = COLORS.BLACK_ALPHA,
+        Color = Color3.fromRGB(0, 0, 0),
         Transparency = 0.2,
         Filled = true,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         ZIndex = 10,
     })
     
@@ -315,30 +288,28 @@ local function createSlider(label, position, tabId, index)
         Color = COLORS.BORDER,
         Transparency = 1,
         Filled = false,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         ZIndex = 11,
     })
     
-    -- Slider fill
     local sliderFill = createDrawing("Square", {
         Size = Vector2.new(0, 10),
         Position = position,
         Color = COLORS.SECONDARY,
         Transparency = 1,
         Filled = true,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         ZIndex = 12,
     })
     
-    -- Value display
     local valueText = createDrawing("Text", {
         Text = "0",
-        Size = 11,
+        Size = 10,
         Font = Drawing.Fonts.System,
         Position = Vector2.new(position.X + 90, position.Y - 1),
         Color = COLORS.TEXT_WHITE,
         Transparency = 1,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         Center = true,
         Outline = false,
         ZIndex = 13,
@@ -357,219 +328,246 @@ local function createSlider(label, position, tabId, index)
 end
 
 -- Create Fieldset
-local function createFieldset(title, position, tabId, contentCallback)
-    local fieldsetElements = {}
+local function createFieldset(title, position, tabId)
+    local fieldsetData = {
+        title = title,
+        position = position,
+        tabId = tabId,
+        elements = {}
+    }
     
-    -- Fieldset background
     local bg = createDrawing("Square", {
-        Size = Vector2.new(CONFIG.FIELDSET_WIDTH, 150),
+        Size = Vector2.new(CONFIG.FIELDSET_WIDTH, CONFIG.FIELDSET_HEIGHT),
         Position = position,
         Color = COLORS.BG_FIELD,
         Transparency = 1,
         Filled = true,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         ZIndex = 8,
     })
     
     local border = createDrawing("Square", {
-        Size = Vector2.new(CONFIG.FIELDSET_WIDTH, 150),
+        Size = Vector2.new(CONFIG.FIELDSET_WIDTH, CONFIG.FIELDSET_HEIGHT),
         Position = position,
         Color = COLORS.BORDER,
         Transparency = 1,
         Filled = false,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         ZIndex = 9,
     })
     
-    -- Fieldset title
     local titleText = createDrawing("Text", {
         Text = title,
-        Size = 12,
+        Size = 11,
         Font = Drawing.Fonts.System,
         Position = Vector2.new(position.X + 10, position.Y - 8),
         Color = COLORS.TEXT_WHITE,
         Transparency = 1,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         Center = false,
         Outline = false,
         ZIndex = 10,
     })
     
-    -- Title background (to create legend effect)
     local titleBg = createDrawing("Square", {
-        Size = Vector2.new(#title * 7, 3),
+        Size = Vector2.new(string.len(title) * 7 + 4, 3),
         Position = Vector2.new(position.X + 8, position.Y - 1),
         Color = COLORS.BG_FIELD,
         Transparency = 1,
         Filled = true,
-        Visible = true,
+        Visible = tabId == GUI.currentTab,
         ZIndex = 9,
     })
     
-    table.insert(fieldsetElements, bg)
-    table.insert(fieldsetElements, border)
-    table.insert(fieldsetElements, titleText)
-    table.insert(fieldsetElements, titleBg)
-    
-    -- Call content callback to add elements
-    if contentCallback then
-        contentCallback(position, tabId)
-    end
-    
-    return fieldsetElements
+    fieldsetData.elements = {bg, border, titleText, titleBg}
+    return fieldsetData
 end
 
 -- Create Tab 1 Content (RAGE)
-local function createTab1Content()
-    local startX = GUI.position.X + 30
-    local startY = GUI.position.Y + CONFIG.BAR_HEIGHT + 52
-    
-    -- Fieldset 1: Box1
-    createFieldset("Box1", Vector2.new(startX, startY), 1, function(pos, tabId)
-        local checkbox1 = createCheckbox("Checkbox1", Vector2.new(pos.X + 10, pos.Y + 15), tabId, 1)
-        local checkbox2 = createCheckbox("Checkbox2", Vector2.new(pos.X + 10, pos.Y + 35), tabId, 2)
-        local slider1 = createSlider("Range slider1", Vector2.new(pos.X + 17, pos.Y + 75), tabId, 1)
-        
-        table.insert(GUI.checkboxes, checkbox1)
-        table.insert(GUI.checkboxes, checkbox2)
-        table.insert(GUI.sliders, slider1)
-    end)
-    
-    -- Fieldset 2: Box2
-    createFieldset("Box2", Vector2.new(startX + CONFIG.FIELDSET_WIDTH + 30, startY), 1, function(pos, tabId)
-        local checkbox3 = createCheckbox("Checkbox3", Vector2.new(pos.X + 10, pos.Y + 15), tabId, 3)
-        local checkbox4 = createCheckbox("Checkbox4", Vector2.new(pos.X + 10, pos.Y + 35), tabId, 4)
-        local slider2 = createSlider("Range slider2", Vector2.new(pos.X + 17, pos.Y + 75), tabId, 2)
-        
-        table.insert(GUI.checkboxes, checkbox3)
-        table.insert(GUI.checkboxes, checkbox4)
-        table.insert(GUI.sliders, slider2)
-    end)
-end
+local contentStartX = GUI.position.X + 40
+local contentStartY = GUI.position.Y + CONFIG.BAR_HEIGHT + 52
 
--- Update all element positions based on menu position
-local function updateElementPositions()
-    -- Update all drawings with relative positions
-    -- This is a simplified version - you'd need to track original offsets
-    for _, element in ipairs(GUI.elements) do
-        if element.Position then
-            -- Recalculate position based on new menu position
-            -- This requires storing original offsets, which is simplified here
-        end
-    end
-end
+-- Box1
+local box1 = createFieldset("Box1", Vector2.new(contentStartX, contentStartY), 1)
+local checkbox1 = createCheckbox("Checkbox1", Vector2.new(contentStartX + 15, contentStartY + 20), 1, 1)
+local checkbox2 = createCheckbox("Checkbox2", Vector2.new(contentStartX + 15, contentStartY + 45), 1, 2)
+local slider1 = createSlider("Range slider1", Vector2.new(contentStartX + 18, contentStartY + 95), 1, 1)
 
--- Handle Tab Switching
-local function switchTab(newTabIndex)
-    if GUI.currentTab == newTabIndex then return end
+table.insert(GUI.checkboxes, checkbox1)
+table.insert(GUI.checkboxes, checkbox2)
+table.insert(GUI.sliders, slider1)
+
+-- Box2
+local box2 = createFieldset("Box2", Vector2.new(contentStartX + CONFIG.FIELDSET_WIDTH + 40, contentStartY), 1)
+local checkbox3 = createCheckbox("Checkbox3", Vector2.new(contentStartX + CONFIG.FIELDSET_WIDTH + 55, contentStartY + 20), 1, 3)
+local checkbox4 = createCheckbox("Checkbox4", Vector2.new(contentStartX + CONFIG.FIELDSET_WIDTH + 55, contentStartY + 45), 1, 4)
+local slider2 = createSlider("Range slider2", Vector2.new(contentStartX + CONFIG.FIELDSET_WIDTH + 58, contentStartY + 95), 1, 2)
+
+table.insert(GUI.checkboxes, checkbox3)
+table.insert(GUI.checkboxes, checkbox4)
+table.insert(GUI.sliders, slider2)
+
+print("[FATALITY] Content created")
+
+-- Update all element positions
+local function updateAllPositions()
+    -- Update main containers
+    menuBg.Position = GUI.position
+    menuBorder.Position = GUI.position
+    topBar.Position = GUI.position
+    gradientLine.Position = Vector2.new(GUI.position.X, GUI.position.Y + 15)
+    logo.Position = Vector2.new(GUI.position.X + 18, GUI.position.Y + 35)
+    insideContainer.Position = Vector2.new(GUI.position.X + 2, GUI.position.Y + CONFIG.BAR_HEIGHT + 35)
+    insideBorder.Position = Vector2.new(GUI.position.X + 2, GUI.position.Y + CONFIG.BAR_HEIGHT + 35)
     
-    GUI.currentTab = newTabIndex
-    
-    -- Update tab colors and underlines
-    for i, tab in ipairs(TABS) do
-        -- Find and update tab elements (simplified)
+    -- Update tabs
+    for i, tab in ipairs(tabElements) do
+        local xPos = GUI.position.X + tabStartX + ((i - 1) * tabSpacing)
+        local yPos = GUI.position.Y + 30
+        tab.text.Position = Vector2.new(xPos, yPos)
+        tab.underline.Position = Vector2.new(xPos, yPos + 18)
+        tab.bounds.pos = Vector2.new(xPos, yPos)
     end
     
-    -- Show/hide content based on active tab
+    -- Update content positions
+    local newContentStartX = GUI.position.X + 40
+    local newContentStartY = GUI.position.Y + CONFIG.BAR_HEIGHT + 52
+    
+    -- Update Box1 fieldset
+    for _, elem in ipairs(box1.elements) do
+        local offsetX = elem.Position.X - contentStartX
+        local offsetY = elem.Position.Y - contentStartY
+        elem.Position = Vector2.new(newContentStartX + offsetX, newContentStartY + offsetY)
+    end
+    
+    -- Update Box2 fieldset
+    for _, elem in ipairs(box2.elements) do
+        local offsetX = elem.Position.X - (contentStartX + CONFIG.FIELDSET_WIDTH + 40)
+        local offsetY = elem.Position.Y - contentStartY
+        elem.Position = Vector2.new(newContentStartX + CONFIG.FIELDSET_WIDTH + 40 + offsetX, newContentStartY + offsetY)
+    end
+    
+    -- Update checkboxes and sliders
     for _, checkbox in ipairs(GUI.checkboxes) do
-        local visible = checkbox.tabId == newTabIndex
+        local offsetX = checkbox.position.X - contentStartX
+        local offsetY = checkbox.position.Y - contentStartY
+        local newPos = Vector2.new(newContentStartX + offsetX, newContentStartY + offsetY)
+        
+        checkbox.position = newPos
+        checkbox.bounds.pos = newPos
+        checkbox.elements.box.Position = newPos
+        checkbox.elements.border.Position = newPos
+        checkbox.elements.label.Position = Vector2.new(newPos.X + 20, newPos.Y - 2)
+    end
+    
+    for _, slider in ipairs(GUI.sliders) do
+        local offsetX = slider.position.X - contentStartX
+        local offsetY = slider.position.Y - contentStartY
+        local newPos = Vector2.new(newContentStartX + offsetX, newContentStartY + offsetY)
+        
+        slider.position = newPos
+        slider.bounds.pos = newPos
+        slider.elements.background.Position = newPos
+        slider.elements.border.Position = newPos
+        slider.elements.fill.Position = newPos
+        slider.elements.label.Position = Vector2.new(newPos.X, newPos.Y - 20)
+        slider.elements.valueText.Position = Vector2.new(newPos.X + 90, newPos.Y - 1)
+    end
+    
+    contentStartX = newContentStartX
+    contentStartY = newContentStartY
+end
+
+-- Switch tabs
+local function switchTab(newTab)
+    if GUI.currentTab == newTab then return end
+    GUI.currentTab = newTab
+    
+    for i, tab in ipairs(tabElements) do
+        tab.text.Color = i == newTab and COLORS.TEXT_WHITE or COLORS.TEXT_GRAY
+        tab.underline.Transparency = i == newTab and 1 or 0
+    end
+    
+    for _, checkbox in ipairs(GUI.checkboxes) do
+        local visible = checkbox.tabId == newTab and GUI.visible
         for _, elem in pairs(checkbox.elements) do
-            elem.Visible = visible and GUI.visible
+            elem.Visible = visible
         end
     end
     
     for _, slider in ipairs(GUI.sliders) do
-        local visible = slider.tabId == newTabIndex
+        local visible = slider.tabId == newTab and GUI.visible
         for _, elem in pairs(slider.elements) do
-            elem.Visible = visible and GUI.visible
+            elem.Visible = visible
         end
     end
+    
+    -- Update fieldsets
+    for _, elem in ipairs(box1.elements) do
+        elem.Visible = 1 == newTab and GUI.visible
+    end
+    for _, elem in ipairs(box2.elements) do
+        elem.Visible = 1 == newTab and GUI.visible
+    end
 end
 
--- Handle Checkbox Click
+-- Handle checkbox click
 local function handleCheckboxClick(checkbox)
     checkbox.checked = not checkbox.checked
-    
-    if checkbox.checked then
-        checkbox.elements.box.Color = COLORS.SECONDARY
-        checkbox.elements.border.Color = COLORS.SECONDARY
-    else
-        checkbox.elements.box.Color = COLORS.BG_DARKER
-        checkbox.elements.border.Color = COLORS.BORDER
-    end
-    
-    print(checkbox.label .. " is now " .. (checkbox.checked and "ON" or "OFF"))
+    checkbox.elements.box.Color = checkbox.checked and COLORS.SECONDARY or Color3.fromRGB(25, 21, 63)
+    checkbox.elements.border.Color = checkbox.checked and COLORS.SECONDARY or COLORS.BORDER
+    print("[FATALITY]", checkbox.label, "is now", checkbox.checked and "ON" or "OFF")
 end
 
--- Handle Slider Drag
+-- Handle slider drag
 local function handleSliderDrag(slider, mouseX)
-    local sliderPos = slider.bounds.pos
-    local sliderWidth = slider.bounds.size.X
-    
-    local relativeX = mouseX - sliderPos.X
-    relativeX = math.clamp(relativeX, 0, sliderWidth)
-    
-    local percentage = relativeX / sliderWidth
+    local relativeX = mouseX - slider.bounds.pos.X
+    relativeX = math.clamp(relativeX, 0, slider.bounds.size.X)
+    local percentage = relativeX / slider.bounds.size.X
     slider.value = math.floor(slider.min + (slider.max - slider.min) * percentage)
-    
-    -- Update slider fill
     slider.elements.fill.Size = Vector2.new(relativeX, 10)
     slider.elements.valueText.Text = tostring(slider.value)
-    
-    -- Optional: Add border highlight on hover
-    if relativeX > 0 then
-        slider.elements.border.Color = COLORS.SECONDARY
-    else
-        slider.elements.border.Color = COLORS.BORDER
-    end
 end
 
--- Initialize GUI
-local function initializeGUI()
-    print("Initializing FATALITY GUI...")
-    
-    -- Create all GUI elements
-    createFogging()
-    createMenuBackground()
-    createTopBar()
-    local tabs = createTabs()
-    createInsideContainer()
-    createTab1Content()
-    
-    -- Set initial tab visibility
-    switchTab(1)
-    
-    print("GUI Initialized! Press DELETE to toggle visibility.")
-end
-
--- Input Handling
+-- Input handling
 local UserInputService = game:GetService("UserInputService")
 local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    -- Toggle GUI visibility with DELETE key
     if input.KeyCode.Value == CONFIG.TOGGLE_KEY then
         GUI.visible = not GUI.visible
-        updateVisibility()
+        for _, elem in ipairs(GUI.elements) do
+            elem.Visible = GUI.visible
+        end
+        print("[FATALITY] Visibility:", GUI.visible)
         return
     end
     
-    -- Handle mouse clicks
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         local mousePos = Vector2.new(mouse.X, mouse.Y)
         
-        -- Check if clicking on menu bar for dragging
+        -- Check title bar drag
         if isMouseOver(GUI.position, Vector2.new(CONFIG.MENU_WIDTH, CONFIG.BAR_HEIGHT)) then
             GUI.dragging = true
             GUI.dragOffset = Vector2.new(mousePos.X - GUI.position.X, mousePos.Y - GUI.position.Y)
+            return
+        end
+        
+        -- Check tab clicks
+        for _, tab in ipairs(tabElements) do
+            if isMouseOver(tab.bounds.pos, tab.bounds.size) then
+                switchTab(tab.index)
+                return
+            end
         end
         
         -- Check checkbox clicks
         for _, checkbox in ipairs(GUI.checkboxes) do
             if checkbox.tabId == GUI.currentTab and isMouseOver(checkbox.bounds.pos, checkbox.bounds.size) then
                 handleCheckboxClick(checkbox)
+                return
             end
         end
         
@@ -578,6 +576,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
             if slider.tabId == GUI.currentTab and isMouseOver(slider.bounds.pos, slider.bounds.size) then
                 slider.dragging = true
                 handleSliderDrag(slider, mouse.X)
+                return
             end
         end
     end
@@ -588,7 +587,6 @@ UserInputService.InputEnded:Connect(function(input)
         GUI.dragging = false
         for _, slider in ipairs(GUI.sliders) do
             slider.dragging = false
-            slider.elements.border.Color = COLORS.BORDER
         end
     end
 end)
@@ -596,17 +594,15 @@ end)
 -- Main update loop
 spawn(function()
     while true do
-        wait(0.016) -- ~60 FPS
+        wait(0.016)
         
         if GUI.visible then
-            -- Handle dragging
             if GUI.dragging then
                 local mousePos = Vector2.new(mouse.X, mouse.Y)
                 GUI.position = Vector2.new(mousePos.X - GUI.dragOffset.X, mousePos.Y - GUI.dragOffset.Y)
-                updateElementPositions()
+                updateAllPositions()
             end
             
-            -- Handle slider dragging
             for _, slider in ipairs(GUI.sliders) do
                 if slider.dragging and slider.tabId == GUI.currentTab then
                     handleSliderDrag(slider, mouse.X)
@@ -616,53 +612,55 @@ spawn(function()
     end
 end)
 
--- Start the GUI
-initializeGUI()
+print("[FATALITY] GUI loaded successfully!")
+print("[FATALITY] Press DELETE to toggle")
 
--- Export GUI API for external control
-return {
+-- API
+local API = {
     toggle = function()
         GUI.visible = not GUI.visible
-        updateVisibility()
+        for _, elem in ipairs(GUI.elements) do
+            elem.Visible = GUI.visible
+        end
     end,
-    
     setCheckbox = function(tabId, index, value)
-        for _, checkbox in ipairs(GUI.checkboxes) do
-            if checkbox.tabId == tabId and checkbox.index == index then
-                checkbox.checked = value
-                handleCheckboxClick(checkbox)
+        for _, cb in ipairs(GUI.checkboxes) do
+            if cb.tabId == tabId and cb.index == index then
+                cb.checked = value
+                cb.elements.box.Color = value and COLORS.SECONDARY or Color3.fromRGB(25, 21, 63)
+                cb.elements.border.Color = value and COLORS.SECONDARY or COLORS.BORDER
                 break
             end
         end
     end,
-    
     getCheckbox = function(tabId, index)
-        for _, checkbox in ipairs(GUI.checkboxes) do
-            if checkbox.tabId == tabId and checkbox.index == index then
-                return checkbox.checked
+        for _, cb in ipairs(GUI.checkboxes) do
+            if cb.tabId == tabId and cb.index == index then
+                return cb.checked
             end
         end
         return false
     end,
-    
     setSlider = function(tabId, index, value)
-        for _, slider in ipairs(GUI.sliders) do
-            if slider.tabId == tabId and slider.index == index then
-                slider.value = math.clamp(value, slider.min, slider.max)
-                local percentage = (slider.value - slider.min) / (slider.max - slider.min)
-                slider.elements.fill.Size = Vector2.new(slider.bounds.size.X * percentage, 10)
-                slider.elements.valueText.Text = tostring(slider.value)
+        for _, sl in ipairs(GUI.sliders) do
+            if sl.tabId == tabId and sl.index == index then
+                sl.value = math.clamp(value, sl.min, sl.max)
+                local percentage = (sl.value - sl.min) / (sl.max - sl.min)
+                sl.elements.fill.Size = Vector2.new(sl.bounds.size.X * percentage, 10)
+                sl.elements.valueText.Text = tostring(sl.value)
                 break
             end
         end
     end,
-    
     getSlider = function(tabId, index)
-        for _, slider in ipairs(GUI.sliders) do
-            if slider.tabId == tabId and slider.index == index then
-                return slider.value
+        for _, sl in ipairs(GUI.sliders) do
+            if sl.tabId == tabId and sl.index == index then
+                return sl.value
             end
         end
         return 0
     end,
 }
+
+_G.FatalityGUI = API
+return API
